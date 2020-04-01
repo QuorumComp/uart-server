@@ -1,0 +1,22 @@
+[package]
+name = "uart-server"
+version = "0.1.0"
+authors = ["Carsten Elton Sorensen <csoren@gmail.com>"]
+edition = "2018"
+links = "ncursesw"
+build = "build.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = "~2.32.0"
+toml = "0.4.0"
+serde = "1.0"
+serde_derive = "1.0"
+dirs = "1.0.4"
+serialport = { path = "serialport-rs" }
+num-traits = "0.2"
+num-derive = "0.3"
+
+[target.'cfg(unix)'.dependencies]
+ncurses = "5.99.0"

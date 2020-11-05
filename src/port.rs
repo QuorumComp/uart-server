@@ -3,7 +3,16 @@ use std::convert::TryInto;
 use serialport::*;
 
 pub fn open(port_name: &str) -> Result<Box<dyn SerialPort>> {
-    serialport::new(port_name, 57600).timeout(std::time::Duration::from_secs(60*60*24)).open()
+    let result = serialport::new(port_name, 57600).open();
+    result.and_then(|mut port| {
+        port.set_timeout(std::time::Duration::from_secs(60*60*24))?;
+        port.set_baud_rate(57600)?;
+        port.set_data_bits(DataBits::Eight)?;
+        port.set_flow_control(FlowControl::Software)?;
+        port.set_parity(Parity::None)?;
+        port.set_stop_bits(StopBits::One)?;
+        Ok(port)
+    })
 }
 
 pub fn read_byte(port: &mut dyn SerialPort) -> serialport::Result<u8> {

@@ -128,6 +128,14 @@ fn to_hc800(wch_result: ncurses::WchResult, debug: bool) -> Option<u8> {
     }
 }
 
+fn handle_print_char(port: &mut dyn SerialPort, character: char) -> Result<(), UartError> {
+    print!("{}", character);
+    port::write_byte(port, b'!')?;
+    port::write_byte(port, Status::Ok as u8)?;
+    port.flush()?;
+    Ok(())
+}
+
 #[cfg(target_os = "windows")]
 fn handle_request_char(port: &mut dyn SerialPort, _debug: bool) -> Result<(), UartError> {
     port::write_byte(port, b'!')?;
@@ -208,6 +216,7 @@ fn serve(port: &mut dyn SerialPort, root: &Path, debug: bool) -> Result<(), Uart
             Command::Identify { nonce } => { handle_identity(nonce, port, debug)?; }
             Command::SendFile { options } => { handle_send_file(options, root, port, debug)?; }
             Command::RequestChar => { handle_request_char(port, debug)?; }
+            Command::PrintChar { character } => { handle_print_char(port, character)?; }
         }
     }
 }

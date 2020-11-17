@@ -9,7 +9,8 @@ use num_traits::FromPrimitive;
 enum CommandIdentifier {
     Identify = 0,
     SendFile = 1,
-    RequestChar = 2
+    RequestChar = 2,
+    PrintChar = 3
 }
 
 #[derive(Debug)]
@@ -23,7 +24,8 @@ pub struct SendFileOptions {
 pub enum Command {
     Identify { nonce: u16 },
     SendFile { options: SendFileOptions },
-    RequestChar
+    RequestChar,
+    PrintChar { character: char }
 }
 
 
@@ -33,6 +35,10 @@ fn read_identify(port: &mut dyn SerialPort) -> Result<Command> {
 
 fn read_request_char() -> Result<Command> {
     Ok(Command::RequestChar)
+}
+
+fn read_print_char(port: &mut dyn SerialPort) -> Result<Command> {
+    Ok(Command::PrintChar { character: port::read_byte(port)? as char })
 }
 
 fn read_send_file(port: &mut dyn SerialPort) -> Result<Command> {
@@ -50,7 +56,7 @@ fn read_send_file(port: &mut dyn SerialPort) -> Result<Command> {
 }
 
 
-pub fn read_command(port: &mut dyn SerialPort, _debug: bool) -> Result<Command> {
+pub fn read_command(port: &mut dyn SerialPort, debug: bool) -> Result<Command> {
     loop {
         let start_char = port::read_byte(port)?;
         if start_char == b'?' {
@@ -63,8 +69,9 @@ pub fn read_command(port: &mut dyn SerialPort, _debug: bool) -> Result<Command> 
                     CommandIdentifier::Identify => { read_identify(port) }
                     CommandIdentifier::SendFile => { read_send_file(port) }
                     CommandIdentifier::RequestChar => { read_request_char() }
+                    CommandIdentifier::PrintChar => { read_print_char(port) }
                 };
-                //if debug { println!("DEBUG: Command {:?}", command) };
+                if debug { println!("DEBUG: Command {:?}", command) };
                 return command;
             } else {
                 //Err(port::error("Unknown command identifier"))

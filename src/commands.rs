@@ -10,14 +10,15 @@ enum CommandIdentifier {
     Identify = 0,
     SendFile = 1,
     RequestChar = 2,
-    PrintChar = 3
+    PrintChar = 3,
+    StatFile = 4
 }
 
 #[derive(Debug)]
 pub struct SendFileOptions {
     pub path: String,
-    pub offset: u16,
-    pub length: u16
+    pub offset: u32,
+    pub length: u32
 }
 
 #[derive(Debug)]
@@ -25,7 +26,8 @@ pub enum Command {
     Identify { nonce: u16 },
     SendFile { options: SendFileOptions },
     RequestChar,
-    PrintChar { character: char }
+    PrintChar { character: char },
+    StatFile { path: String },
 }
 
 
@@ -43,8 +45,8 @@ fn read_print_char(port: &mut dyn SerialPort) -> Result<Command> {
 
 fn read_send_file(port: &mut dyn SerialPort) -> Result<Command> {
     let path = port::read_string(port)?;
-    let offset = port::read_u16(port)?;
-    let length = port::read_u16(port)?;
+    let offset = port::read_u32(port)?;
+    let length = port::read_u32(port)?;
 
     let options = SendFileOptions {
         path: path,
@@ -53,6 +55,13 @@ fn read_send_file(port: &mut dyn SerialPort) -> Result<Command> {
     };
 
     Ok(Command::SendFile { options: options })
+}
+
+
+fn read_stat_file(port: &mut dyn SerialPort) -> Result<Command> {
+    let path = port::read_string(port)?;
+
+    Ok(Command::StatFile { path: path })
 }
 
 
@@ -70,6 +79,7 @@ pub fn read_command(port: &mut dyn SerialPort, debug: bool) -> Result<Command> {
                     CommandIdentifier::SendFile => { read_send_file(port) }
                     CommandIdentifier::RequestChar => { read_request_char() }
                     CommandIdentifier::PrintChar => { read_print_char(port) }
+                    CommandIdentifier::StatFile => { read_stat_file(port) }
                 };
                 if debug { println!("DEBUG: Command {:?}", command) };
                 return command;

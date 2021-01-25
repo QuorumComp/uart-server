@@ -1,3 +1,0 @@
-[submodule "serialport-rs"]
-	path = serialport-rs
-	url = git@gitlab.com:csoren/serialport-rs.git

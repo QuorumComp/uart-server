@@ -47,6 +47,21 @@ pub fn write_u16(port: &mut dyn SerialPort, value: u16) -> Result<()> {
     Ok(())
 }
 
+pub fn read_u32(port: &mut dyn SerialPort) -> Result<u32> {
+    let low = read_u16(port)? as u32;
+    let high = read_u16(port)? as u32;
+    
+    Ok((high << 16) | low)
+}
+
+pub fn write_u32(port: &mut dyn SerialPort, value: u32) -> Result<()> {
+    let low = value as u16;
+    let high = (value >> 8) as u16;
+    write_u16(port, low)?;
+    write_u16(port, high)?;
+    Ok(())
+}
+
 pub fn read_string(port: &mut dyn SerialPort) -> Result<String> {
     let mut result = String::new();
     let length = read_u16(port)?;

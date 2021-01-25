@@ -194,6 +194,30 @@ fn handle_send_file(options: commands::SendFileOptions, root: &Path, port: &mut 
     Ok(())
 }
 
+fn handle_stat_file(port: &mut dyn SerialPort, path: &str, root: &Path, debug: bool) -> Result<(), UartError> {
+    let full_path = root.join(path);
+    if debug { println!("DEBUG: Stat file {}", full_path.display()) }
+    if let Ok(file) = std::fs::File::open(full_path) {
+        let metadata = std::fs::File::metadata(&file)?;
+        let is_dir = metadata.is_dir();
+        let length = metadata.len() as u64;
+
+        if debug { println!("DEBUG: Exists, length {}, directory {}", length, is_dir) }
+
+        port::write_byte(port, b'!')?;
+        port::write_byte(port, is_dir as u8)?;
+        port::write_u32(port, length as u32)?;
+    } else {
+        if debug { println!("DEBUG: File not found") }
+
+        port::write_byte(port, b'!')?;
+        port::write_byte(port, Status::NotAvailable as u8)?;
+    }
+    port.flush()?;
+
+    Ok(())
+}
+
 #[cfg(not(target_os = "windows"))]
 fn init_terminal() {
     ncurses::initscr();
@@ -217,6 +241,7 @@ fn serve(port: &mut dyn SerialPort, root: &Path, debug: bool) -> Result<(), Uart
             Command::SendFile { options } => { handle_send_file(options, root, port, debug)?; }
             Command::RequestChar => { handle_request_char(port, debug)?; }
             Command::PrintChar { character } => { handle_print_char(port, character)?; }
+            Command::StatFile { path } => { handle_stat_file(port, &path, root, debug)?; }
         }
     }
 }

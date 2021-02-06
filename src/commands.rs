@@ -18,7 +18,7 @@ enum CommandIdentifier {
 pub struct SendFileOptions {
     pub path: String,
     pub offset: u32,
-    pub length: u32
+    pub length: u16
 }
 
 #[derive(Debug)]
@@ -46,7 +46,7 @@ fn read_print_char(port: &mut dyn SerialPort) -> Result<Command> {
 fn read_send_file(port: &mut dyn SerialPort) -> Result<Command> {
     let path = port::read_string(port)?;
     let offset = port::read_u32(port)?;
-    let length = port::read_u32(port)?;
+    let length = port::read_u16(port)?;
 
     let options = SendFileOptions {
         path: path,
@@ -84,7 +84,9 @@ pub fn read_command(port: &mut dyn SerialPort, debug: bool) -> Result<Command> {
                 if debug { println!("DEBUG: Command {:?}", command) };
                 return command;
             } else {
-                //Err(port::error("Unknown command identifier"))
+                if debug {
+                    println!("DEBUG: Unexpected byte {:?}", b);
+                }
             }
         }
     }

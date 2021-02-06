@@ -8,7 +8,7 @@ pub fn open(port_name: &str) -> Result<Box<dyn SerialPort>> {
         port.set_timeout(std::time::Duration::from_secs(60*60*24))?;
         port.set_baud_rate(57600)?;
         port.set_data_bits(DataBits::Eight)?;
-        port.set_flow_control(FlowControl::Software)?;
+        port.set_flow_control(FlowControl::None)?;
         port.set_parity(Parity::None)?;
         port.set_stop_bits(StopBits::One)?;
         Ok(port)
@@ -56,7 +56,7 @@ pub fn read_u32(port: &mut dyn SerialPort) -> Result<u32> {
 
 pub fn write_u32(port: &mut dyn SerialPort, value: u32) -> Result<()> {
     let low = value as u16;
-    let high = (value >> 8) as u16;
+    let high = (value >> 16) as u16;
     write_u16(port, low)?;
     write_u16(port, high)?;
     Ok(())

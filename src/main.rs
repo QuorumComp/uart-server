@@ -1,4 +1,6 @@
 use std::io::Read;
+use std::io::Seek;
+use std::io::SeekFrom;
 use std::path::Path;
 
 use serialport::SerialPort;
@@ -175,8 +177,18 @@ fn handle_send_file(options: commands::SendFileOptions, root: &Path, port: &mut 
     let full_path = root.join(options.path);
     if debug { println!("DEBUG: Send file {}", full_path.display()) }
     if let Ok(mut file) = std::fs::File::open(full_path) {
-        let mut data = Vec::new();
-        file.read_to_end(&mut data)?;
+        let metadata = std::fs::File::metadata(&file)?;
+        let to_read = 
+            if options.length == 0 {
+                metadata.len()
+            } else {
+                options.length as u64
+            };
+        file.seek(SeekFrom::Start(options.offset as u64))?;
+
+        let mut data = vec![0u8; to_read as usize];
+        let read_bytes = file.read(&mut data)?;
+        data.truncate(read_bytes);
 
         if debug { println!("DEBUG: Sending file with {} bytes", data.len()) }
 
@@ -199,12 +211,13 @@ fn handle_stat_file(port: &mut dyn SerialPort, path: &str, root: &Path, debug: b
     if debug { println!("DEBUG: Stat file {}", full_path.display()) }
     if let Ok(file) = std::fs::File::open(full_path) {
         let metadata = std::fs::File::metadata(&file)?;
-        let is_dir = metadata.is_dir();
+        let is_dir = if metadata.is_dir() { 1 } else { 0 };
         let length = metadata.len() as u64;
 
         if debug { println!("DEBUG: Exists, length {}, directory {}", length, is_dir) }
 
         port::write_byte(port, b'!')?;
+        port::write_byte(port, Status::Ok as u8)?;
         port::write_byte(port, is_dir as u8)?;
         port::write_u32(port, length as u32)?;
     } else {

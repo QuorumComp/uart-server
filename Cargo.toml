@@ -1,6 +1,6 @@
 [package]
 name = "uart-server"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["quorum <micjph@protonmail.com"]
 edition = "2018"
 links = "ncursesw"

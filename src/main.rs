@@ -1,3 +1,4 @@
+use std::fs;
 use std::io::Read;
 use std::io::Seek;
 use std::io::SeekFrom;
@@ -17,6 +18,7 @@ pub enum UartError {
     Serial(serialport::Error),
     Utf8(std::str::Utf8Error),
     Io(std::io::Error),
+    OsString(String),
     Other(String),
 }
 
@@ -26,13 +28,21 @@ impl std::fmt::Display for UartError {
             UartError::Serial(error) => error.fmt(f),
             UartError::Utf8(error) => error.fmt(f),
             UartError::Io(error) => error.fmt(f),
+            UartError::OsString(error) => error.fmt(f),
             UartError::Other(error) => write!(f, "{}", error)
         }
     }
 }
+
 impl From<std::str::Utf8Error> for UartError {
     fn from(error: std::str::Utf8Error) -> Self {
         UartError::Utf8(error)
+    }
+}
+
+impl From<std::ffi::OsString> for UartError {
+    fn from(value: std::ffi::OsString) -> Self {
+        UartError::OsString(value.into_string().unwrap())
     }
 }
 
@@ -231,6 +241,37 @@ fn handle_stat_file(port: &mut dyn SerialPort, path: &str, root: &Path, debug: b
     Ok(())
 }
 
+fn handle_read_directory(port: &mut dyn SerialPort, options: commands::ReadDirectoryOptions, root: &Path, debug: bool) -> Result<(), UartError> {
+    let full_path = root.join(options.path);
+    let index = options.index;
+    let directory = fs::read_dir(full_path).ok();
+    let nth = directory.and_then(|mut dir| dir.nth(index as usize).and_then(|v| v.ok()));
+
+    if let Some(file) = nth {
+        let metadata = file.metadata()?;
+        
+        let name = file.file_name().into_string()?;
+        let length = metadata.len();
+        let is_dir = metadata.is_dir();
+
+        if debug { println!("DEBUG: Exists, name {}, length {}, directory {}", name, length, is_dir) }
+
+        port::write_byte(port, b'!')?;
+        port::write_byte(port, Status::Ok as u8)?;
+        port::write_string(port, &name)?;
+        port::write_byte(port, is_dir as u8)?;
+        port::write_u32(port, length as u32)?;
+    } else {
+        if debug { println!("DEBUG: File not found") }
+
+        port::write_byte(port, b'!')?;
+        port::write_byte(port, Status::NotAvailable as u8)?;
+    }
+    port.flush()?;
+
+    Ok(())
+}
+
 #[cfg(not(target_os = "windows"))]
 fn init_terminal() {
     ncurses::initscr();
@@ -255,6 +296,7 @@ fn serve(port: &mut dyn SerialPort, root: &Path, debug: bool) -> Result<(), Uart
             Command::RequestChar => { handle_request_char(port, debug)?; }
             Command::PrintChar { character } => { handle_print_char(port, character)?; }
             Command::StatFile { path } => { handle_stat_file(port, &path, root, debug)?; }
+            Command::ReadDirectory { options } => { handle_read_directory(port, options, root, debug)?; }
         }
     }
 }

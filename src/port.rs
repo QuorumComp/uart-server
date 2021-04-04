@@ -72,3 +72,14 @@ pub fn read_string(port: &mut dyn SerialPort) -> Result<String> {
 
     Ok(result)
 }
+
+pub fn write_string(port: &mut dyn SerialPort, value: &str) -> Result<()> {
+    let length = value.len();
+
+    write_u16(port, length.try_into().unwrap())?;
+    for ch in value.chars() {
+        write_byte(port, ch as u8)?;
+    }
+
+    Ok(())
+}

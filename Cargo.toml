@@ -2,21 +2,20 @@
 name = "uart-server"
 version = "0.2.1"
 authors = ["quorum <micjph@protonmail.com"]
-edition = "2018"
-links = "ncursesw"
+edition = "2021"
 build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = "~2.32.0"
-toml = "0.4.0"
+clap = { version = "3.2.25", features = ["cargo"] }
+toml = "0.8.19"
 serde = "1.0"
 serde_derive = "1.0"
-dirs = "1.0.4"
-serialport = "4.0.0"
+dirs = "5.0.1"
+serialport = "4.6.1"
 num-traits = "0.2"
-num-derive = "0.3"
+num-derive = "0.4.2"
 
 [target.'cfg(unix)'.dependencies]
-ncurses = "5.99.0"
+ncurses = "5.101.0"

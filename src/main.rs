@@ -187,7 +187,7 @@ fn handle_identity(nonce: u16, port: &mut dyn SerialPort, debug: bool) -> Result
 }
 
 fn handle_send_file(options: commands::SendFileOptions, root: &Path, port: &mut dyn SerialPort, debug: bool) -> Result<(), UartError> {
-    let full_path = root.join(&options.path[1..]);
+    let full_path = root.join(if options.path.len() == 0 { "" } else { &options.path[1..] });
     if debug { println!("DEBUG: Send file {}", full_path.display()) }
     if let Ok(mut file) = std::fs::File::open(&full_path) {
         let metadata = std::fs::File::metadata(&file)?;
@@ -220,7 +220,7 @@ fn handle_send_file(options: commands::SendFileOptions, root: &Path, port: &mut 
 }
 
 fn handle_stat_file(port: &mut dyn SerialPort, path: &str, root: &Path, debug: bool) -> Result<(), UartError> {
-    let full_path = root.join(&path[1..]);
+    let full_path = root.join(if path.len() == 0 { "" } else { &path[1..] });
     if debug { println!("DEBUG: Stat file {}", full_path.display()) }
     if let Ok(file) = std::fs::File::open(full_path) {
         let metadata = std::fs::File::metadata(&file)?;
@@ -245,7 +245,7 @@ fn handle_stat_file(port: &mut dyn SerialPort, path: &str, root: &Path, debug: b
 }
 
 fn handle_read_directory(port: &mut dyn SerialPort, options: commands::ReadDirectoryOptions, root: &Path, debug: bool) -> Result<(), UartError> {
-    let full_path = root.join(&options.path[1..]);
+    let full_path = root.join(if options.path.len() == 0 { "" } else { &options.path[1..] });
     let index = options.index;
     let directory = fs::read_dir(full_path).ok();
     let nth = directory.and_then(|mut dir| dir.nth(index as usize).and_then(|v| v.ok()));
@@ -277,7 +277,7 @@ fn handle_read_directory(port: &mut dyn SerialPort, options: commands::ReadDirec
 
 #[cfg(not(target_os = "windows"))]
 fn init_terminal() {
-    ncurses::initscr();
+    //ncurses::initscr();
     ncurses::timeout(0);
     ncurses::cbreak();
     ncurses::noecho();

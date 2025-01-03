@@ -13,7 +13,7 @@ pub struct Arguments {
 }
 
 impl Arguments {
-    fn app() -> clap::App<'static,'static> {
+    fn app() -> clap::App<'static> {
         return clap_app!(uartfileserver =>
             (@arg PORT: -p --port +takes_value "Serial port to use")
             (@arg DEBUG: --debug "Prints diagnostic messages")
